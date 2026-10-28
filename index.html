@@ -181,7 +181,22 @@ let AC=null,master=null,muted=false,musicOn=false,nextBeat=0,beatIdx=0;
 try{muted=localStorage.getItem('rumo-mute')==='1'}catch(e){}
 function audio(){
   if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:0.5;master.connect(AC.destination)}catch(e){AC=null}
+  loadSongs();
 }
+/* trechos de música do show (5 s), um por cantora */
+const SONG_FILE={c1:'audio/musica-joy.mp3',c2:'audio/musica-ju.mp3',c3:'audio/musica-lane.mp3',mel:'audio/musica-mel.mp3'};
+const SONG={};let songSrc=null,songsAsked=false;
+function loadSongs(){
+  if(songsAsked||!AC)return;songsAsked=true;
+  for(const [id,url] of Object.entries(SONG_FILE)){
+    fetch(url).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>AC.decodeAudioData(b,ok,no))).then(buf=>{SONG[id]=buf}).catch(()=>{});
+  }
+}
+function playSong(id){
+  stopSong();if(!AC||!SONG[id])return false;
+  const s=AC.createBufferSource(),g=AC.createGain();s.buffer=SONG[id];g.gain.value=1.6;s.connect(g);g.connect(master);s.start();songSrc=s;return true;
+}
+function stopSong(){if(songSrc){try{songSrc.stop()}catch(e){}songSrc=null}}
 function setMute(m){muted=m;if(master)master.gain.value=m?0:0.5;try{localStorage.setItem('rumo-mute',m?'1':'0')}catch(e){}}
 const dist=(()=>{let curve=null;return()=>{if(curve)return curve;const n=1024;curve=new Float32Array(n);for(let i=0;i<n;i++){const x=i*2/n-1;curve[i]=Math.tanh(x*6)}return curve}})();
 function tone(f,dur,type='square',vol=.15,slide=0,when=0){if(!AC)return;const t=AC.currentTime+when;const o=AC.createOscillator(),gn=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+dur);gn.gain.setValueAtTime(vol,t);gn.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(gn);gn.connect(master);o.start(t);o.stop(t+dur+.02)}
@@ -225,14 +240,14 @@ function newGame(){
   const s=SINGERS[sel];
   P={x:150,y:GROUND,vy:0,ground:true,duck:false,canDbl:s.dbl,squash:1,run:0,auto:false};
   obs=[];coins=[];parts=[];speed=330;traveled=0;spawnIn=700;coinIn=900;lives=s.lives;score=0;coinsGot=0;invul=0;shake=0;stage=null;arriveT=0;winT=0;paused=false;
-  bonus=sel===MEL;
+  stopSong();bonus=sel===MEL;
   cat=bonus?{x:P.x-74,y:GROUND,vy:0,ground:true,run:0,landY:null}:null;
   state='play';startMusic();
 }
 function catW(){const i=IMG.cat;return i.width*CATH/i.height}
-function goUnlock(){state='unlock';unlockT=0;sfx.coin()}
+function goUnlock(){stopSong();state='unlock';unlockT=0;sfx.coin()}
 function startMel(){sel=MEL;newGame()}
-function toSelect(){state='select';stopMusic();if(sel===MEL)sel=0}
+function toSelect(){stopSong();state='select';stopMusic();if(sel===MEL)sel=0}
 
 function sprite(){return IMG[SINGERS[sel].id]}
 const PH=118;
@@ -280,7 +295,7 @@ function cardRect(i){const cw=250,gap=30,x0=(W-(cw*3+gap*2))/2;return{x:x0+i*(cw
 const BTN_PLAY={x:W/2-150,y:466,w:300,h:50};
 const BTN_AGAIN={x:W/2-310,y:452,w:290,h:52},BTN_SWAP={x:W/2+20,y:452,w:290,h:52};
 const BTN_MUTE={x:W-58,y:14,w:40,h:34};
-const BTN_MEL={x:W/2-180,y:452,w:360,h:56},BTN_END={x:W/2-160,y:482,w:320,h:46};
+const BTN_MEL={x:W/2-180,y:452,w:360,h:56},BTN_END={x:W/2-160,y:488,w:320,h:42};
 cv.addEventListener('pointerdown',e=>{
   audio();cv.focus();if(e.pointerType==='touch')isTouch=true;
   const p=toGame(e);
@@ -323,7 +338,7 @@ function rand(a,b){return a+Math.random()*(b-a)}
 function update(dt){
   t+=dt;
   if(AC)music();
-  if(state==='win'){winT+=dt;if(winT>3.6)goUnlock();return}
+  if(state==='win'){winT+=dt;if(winT>5.8)goUnlock();return}
   if(state==='unlock'){unlockT+=dt;return}
   if(state==='final'){winT+=dt;return}
   if(state!=='play'||paused)return;
@@ -419,7 +434,7 @@ function ghostAlpha(o){const c=(t+o.cyc)%2.6;if(c<1.4)return 1;if(c<1.8)return 1
 function finish(win){
   stopMusic();
   score=Math.floor(Math.min(traveled,GOAL_PX)/M)+coinsGot*100;
-  if(win){state=bonus?'final':'win';score+=lives*250;sfx.win();winT=0;parts=[]}else{state='over'}
+  if(win){state=bonus?'final':'win';score+=lives*250;if(!playSong(SINGERS[sel].id))sfx.win();winT=0;parts=[]}else{state='over'}
   if(score>best){best=score;try{localStorage.setItem('rumo-best',best)}catch(e){}}
 }
 
@@ -543,6 +558,57 @@ function drawOver(){
   text(`RECORDE ${best}`,W/2,332,10,'#a993bd','center');
   button(BTN_AGAIN,'TENTAR DE NOVO',true);button(BTN_SWAP,'TROCAR CANTORA',false);
 }
+/* banda em silhueta: baterista atrás, guitarrista à esquerda, baixista à direita */
+const SIL='#06010b';
+function silBody(bang,hair){
+  // pernas, tronco, cabeça (proporção chibi, pés em y=0, altura ~140)
+  ctx.beginPath();ctx.moveTo(-22,0);ctx.lineTo(-6,-56);ctx.lineTo(6,-56);ctx.lineTo(22,0);ctx.lineTo(10,0);ctx.lineTo(0,-34);ctx.lineTo(-10,0);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(-17,-54);ctx.lineTo(-19,-96);ctx.quadraticCurveTo(0,-104,19,-96);ctx.lineTo(17,-54);ctx.closePath();ctx.fill();
+  ctx.save();ctx.translate(0,-98);ctx.rotate(bang*.38);
+  ctx.beginPath();ctx.ellipse(2,-20,21,23,0,0,7);ctx.fill();
+  if(hair){ctx.beginPath();ctx.moveTo(-18,-28);ctx.quadraticCurveTo(-30,8+bang*10,-14,30+bang*14);ctx.lineTo(16,30+bang*14);ctx.quadraticCurveTo(30,8+bang*10,20,-28);ctx.closePath();ctx.fill()}
+  ctx.restore();
+}
+function silString(x,y,bang,bass,dir){
+  // instrumento de corda na cintura, braço apontando para fora do palco (dir=-1 esquerda, 1 direita)
+  ctx.save();ctx.translate(x,y);ctx.scale(dir*1.12,1.12);
+  silBody(bang,true);
+  ctx.save();ctx.translate(-4,-56);ctx.rotate(-.38+bang*.06);
+  // corpo em V (guitarra) ou arredondado (baixo)
+  ctx.beginPath();
+  if(bass){ctx.ellipse(-4,2,18,14,0,0,7);ctx.ellipse(-20,4,13,11,0,0,7)}
+  else{ctx.moveTo(10,-6);ctx.lineTo(-34,-20);ctx.lineTo(-22,-2);ctx.lineTo(-36,14);ctx.lineTo(10,6);ctx.closePath()}
+  ctx.fill();
+  const L=bass?92:74;ctx.fillRect(6,-3.5,L,7);
+  ctx.beginPath();ctx.moveTo(6+L,-6);ctx.lineTo(6+L+(bass?20:16),-9);ctx.lineTo(6+L+(bass?20:16),7);ctx.lineTo(6+L,6);ctx.closePath();ctx.fill();
+  ctx.restore();
+  ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=SIL;
+  ctx.beginPath();ctx.moveTo(-14,-92);ctx.lineTo(-20,-68);ctx.lineTo(-10,-56+bang*6);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(14,-92);ctx.lineTo(bass?40:34,-80);ctx.lineTo(bass?58:50,-84);ctx.stroke();
+  ctx.restore();
+}
+function silDrummer(x,y,beat){
+  // só o tronco aparece acima da bateria
+  ctx.save();ctx.translate(x,y);
+  ctx.beginPath();ctx.moveTo(-18,0);ctx.lineTo(-20,-42);ctx.quadraticCurveTo(0,-50,20,-42);ctx.lineTo(18,0);ctx.closePath();ctx.fill();
+  ctx.save();ctx.translate(0,-44);ctx.rotate(Math.sin(beat)*.22);ctx.beginPath();ctx.ellipse(1,-20,20,22,0,0,7);ctx.fill();ctx.restore();
+  ctx.lineWidth=8;ctx.lineCap='round';ctx.strokeStyle=SIL;
+  const up1=Math.max(0,Math.sin(beat)),up2=Math.max(0,-Math.sin(beat));
+  for(const [sx,up] of [[-1,up1],[1,up2]]){
+    const hx=sx*36,hy=-20-up*26;
+    ctx.beginPath();ctx.moveTo(sx*16,-38);ctx.lineTo(sx*30,-22);ctx.lineTo(hx,hy);ctx.stroke();
+    ctx.save();ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx+sx*24,hy-14+up*30);ctx.stroke();ctx.restore();
+  }
+  ctx.restore();
+}
+function drawBand(sx,sw,floor){
+  const beat=t*5.2*2,bang=Math.sin(t*5.2);
+  ctx.save();ctx.fillStyle=SIL;ctx.shadowColor='rgba(208,76,255,.85)';ctx.shadowBlur=14;
+  silDrummer(sx+sw*.66,floor-62,beat);
+  silString(W/2-128,floor+2,Math.max(0,bang),false,-1);
+  silString(W/2+128,floor+2,Math.max(0,-bang),true,1);
+  ctx.restore();
+}
 function drawWin(){
   // fundo de show
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#12061f');g.addColorStop(1,'#3a0f4e');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
@@ -554,6 +620,7 @@ function drawWin(){
   ctx.restore();
   // cantora no palco
   const floor=sy+sh*(422/480);
+  drawBand(sx,sw,floor);
   const img=sprite(),h=150,w=img.width*h/img.height;
   ctx.save();ctx.globalCompositeOperation='lighter';const sp=ctx.createRadialGradient(W/2,floor-70,10,W/2,floor-70,140);sp.addColorStop(0,'rgba(255,230,180,.35)');sp.addColorStop(1,'rgba(255,230,180,0)');ctx.fillStyle=sp;ctx.fillRect(W/2-160,floor-220,320,240);ctx.restore();
   const bang=Math.abs(Math.sin(t*5.2));
@@ -565,15 +632,15 @@ function drawWin(){
   for(let i=0;i<34;i++){const x=i*30-10,j=Math.abs(Math.sin(t*5.2+i*.9))*10,y=H-28-j;
     ctx.fillStyle=i%3?'#0c0414':'#14071f';ctx.beginPath();ctx.arc(x,y,14,0,7);ctx.fill();ctx.fillRect(x-16,y+8,32,40);
     if(i%3===0){ctx.fillRect(x+10,y-38,6,34);ctx.fillRect(x+8,y-46,3,10);ctx.fillRect(x+15,y-46,3,10)}}
-  const vg=ctx.createLinearGradient(0,380,0,470);vg.addColorStop(0,'rgba(18,6,31,0)');vg.addColorStop(.6,'rgba(18,6,31,.7)');vg.addColorStop(1,'rgba(18,6,31,.35)');ctx.fillStyle=vg;ctx.fillRect(0,380,W,H-380);
+  const vg=ctx.createLinearGradient(0,424,0,500);vg.addColorStop(0,'rgba(18,6,31,0)');vg.addColorStop(.6,'rgba(18,6,31,.7)');vg.addColorStop(1,'rgba(18,6,31,.35)');ctx.fillStyle=vg;ctx.fillRect(0,424,W,H-424);
   if(bonus){
-    textOut('O HALLOWEEN FEST COMEÇOU!',W/2,446,40,'#f6d58a','center','band','#2a0f3e',8);
-    text(`FIM DE JOGO · PONTOS ${score} · obrigada por jogar!`,W/2,470,10,'#efe6f5','center');
+    textOut('O HALLOWEEN FEST COMEÇOU!',W/2,458,34,'#f6d58a','center','band','#2a0f3e',8);
+    text(`FIM DE JOGO · PONTOS ${score} · obrigada por jogar!`,W/2,476,10,'#efe6f5','center');
     button(BTN_END,'JOGAR DE NOVO',true);return;
   }
-  textOut('O SHOW VAI COMEÇAR!',W/2,420,40,'#f6d58a','center','band','#2a0f3e',8);
-  text(`PONTOS ${score} · ${coinsGot} caixas · bônus de vidas ${lives*250}`,W/2,440,9,'#efe6f5','center');
-  if(Math.floor(t*2)%2)text('...mas a noite ainda não acabou',W/2,490,11,'#ff9df5','center');
+  textOut('O SHOW VAI COMEÇAR!',W/2,466,36,'#f6d58a','center','band','#2a0f3e',8);
+  text(`PONTOS ${score} · ${coinsGot} caixas · bônus de vidas ${lives*250}`,W/2,486,9,'#efe6f5','center');
+  if(Math.floor(t*2)%2)text('...mas a noite ainda não acabou',W/2,512,11,'#ff9df5','center');
 }
 function drawUnlock(){
   drawWorld(t*40);veil(.72);

@@ -12,4 +12,13 @@ Mini jogo de Halloween em pixel art. Escolha Joy, Ju ou Lane, pule abóboras, fa
 - M: liga e desliga o som
 - No celular: toque para pular, botão da esquerda para abaixar
 
-O jogo é um único `index.html`, com as imagens embutidas. Não precisa instalar nada.
+## Músicas do show
+
+Quando a cantora chega ao palco, toca um trecho de 5 segundos:
+
+- Joy: She Is My Sin
+- Ju: ReVamp, Here's My Hell
+- Lane: EPICA, Code of Life
+- Mel: Echoes of Ailyria, Defying The Dark
+
+O jogo é um `index.html`, com as imagens embutidas, e a pasta `audio` com os trechos das músicas. Não precisa instalar nada.
