@@ -1,6 +1,6 @@
 # Sinfônicas · rumo ao Halloween Fest
 
-Mini jogo de Halloween em pixel art. Escolha Joy, Ju ou Lane, pule abóboras, fantasmas e morcegos e chegue ao palco. Quem chega desbloqueia a fase bônus com a Mel e o gatinho ajudante.
+Mini jogo de Halloween em pixel art. Escolha Joy, Ju ou Lane, pule abóboras, fantasmas e morcegos e chegue ao palco. Quem chega desbloqueia a fase bônus com a Mel e o Sirius, seu gatinho ajudante.
 
 **Jogar:** https://ladymarina08.github.io/rumo-ao-show/
 

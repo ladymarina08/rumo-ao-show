@@ -160,7 +160,7 @@ const SINGERS=[
  {id:'c1',name:'JOY',power:'PULO ALTO',desc:'o grito leva mais longe',jump:1040,lives:3,dbl:false,color:'#ff7ad9'},
  {id:'c2',name:'JU',power:'+1 VIDA',desc:'aguenta mais um tranco',jump:900,lives:4,dbl:false,color:'#ffb02e'},
  {id:'c3',name:'LANE',power:'PULO DUPLO',desc:'pula de novo no ar',jump:880,lives:3,dbl:true,color:'#9ef0ff'},
- {id:'mel',name:'MEL',power:'GATINHO AJUDANTE',desc:'o gato pega as caixas de som',jump:960,lives:3,dbl:false,color:'#ff5a5a'},
+ {id:'mel',name:'MEL',power:'SIRIUS AJUDANTE',desc:'o Sirius pega as caixas de som',jump:960,lives:3,dbl:false,color:'#ff5a5a'},
 ];
 const MEL=3,CATH=58;
 
@@ -515,7 +515,7 @@ function drawPlay(){
   drawParts();ctx.restore();
   drawHUD();drawMute();
   if(isTouch&&!P.auto){for(const [k,r] of Object.entries(BTN)){ctx.fillStyle=(k==='duck'&&input.duck)?'rgba(208,76,255,.45)':'rgba(26,10,38,.45)';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='rgba(239,230,245,.5)';ctx.lineWidth=2;ctx.strokeRect(r.x,r.y,r.w,r.h);text(k==='duck'?'▼ ABAIXA':'▲ PULA',r.x+r.w/2,r.y+r.h/2+6,12,'#efe6f5','center')}}
-  if(traveled<1400&&!paused){const a=Math.min(1,(1400-traveled)/400);ctx.globalAlpha=a;textOut(isTouch?'TOQUE PARA PULAR':'ESPAÇO PULA · ↓ ABAIXA',W/2,170,14,'#f6d58a','center');if(bonus)textOut('O GATINHO PEGA AS CAIXAS DE SOM PRA VOCÊ!',W/2,198,11,'#ff9df5','center','px','#1a0a26',5);ctx.globalAlpha=1}
+  if(traveled<1400&&!paused){const a=Math.min(1,(1400-traveled)/400);ctx.globalAlpha=a;textOut(isTouch?'TOQUE PARA PULAR':'ESPAÇO PULA · ↓ ABAIXA',W/2,170,14,'#f6d58a','center');if(bonus)textOut('O SIRIUS PEGA AS CAIXAS DE SOM PRA VOCÊ!',W/2,198,11,'#ff9df5','center','px','#1a0a26',5);ctx.globalAlpha=1}
   if(paused){veil(.65);textOut('PAUSA',W/2,H/2,44,'#efe6f5','center','band','#2a0f3e',8);text('P ou toque para continuar',W/2,H/2+40,10,'#a993bd','center')}
 }
 function drawOver(){
@@ -563,7 +563,7 @@ function drawUnlock(){
   ctx.save();ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(W/2,300,20,W/2,300,300);g.addColorStop(0,'rgba(255,90,90,.28)');g.addColorStop(1,'rgba(255,90,90,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.restore();
   const k=Math.min(1,unlockT/.5);const sc=.6+.4*(1-Math.pow(1-k,3));
   ctx.save();ctx.translate(W/2,80);ctx.scale(sc,sc);textOut('Bônus: você desbloqueou a cantora Mel',0,0,40,'#ff5a5a','center','band','#2a0f3e',8);ctx.restore();
-  text('ela vai correr até o palco com a ajuda do gatinho',W/2,116,10,'#efe6f5','center');
+  text('ela vai correr até o palco com a ajuda do Sirius',W/2,116,10,'#efe6f5','center');
   for(let i=0;i<6;i++){const a=t*1.2+i;pix(NOTE,W/2+Math.cos(a)*230-9,250+Math.sin(a*1.3)*110,18,24)}
   const img=IMG.mel,h=250,w=img.width*h/img.height,bob=Math.abs(Math.sin(t*4))*6,floor=420;
   ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.ellipse(W/2+20,floor,w*.36,8,0,0,7);ctx.fill();
