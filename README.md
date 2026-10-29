@@ -4,6 +4,13 @@ Mini jogo de Halloween em pixel art. Escolha Joy, Ju ou Lane, pule abóboras, fa
 
 **Jogar:** https://ladymarina08.github.io/rumo-ao-show/
 
+## Cantoras
+
+- Joy: espada, corta os inimigos quando pula
+- Ju: uma vida a mais
+- Lane: pulo duplo
+- Mel (bônus): o Sirius pega as caixas de som
+
 ## Controles
 
 - Espaço / ↑: pular
